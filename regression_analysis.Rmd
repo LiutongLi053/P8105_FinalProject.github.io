@@ -1,6 +1,6 @@
 ---
 title: "regression_analysis"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -158,11 +158,43 @@ summary(step_model) |>
 
 The final model based on MLR results in:
 
-$$ \text{mean_glth} = -5.635  + 0.556\cdot\text{mean_mhlth}
-- 0.115 \cdot \text{mean_sleep}
-+ 0.226 \cdot \text{mean_lpa}
-+ 0.744 \cdot \text{mean_diabetes}
-+ 13.841 \cdot \text{EI_proportion}
-- 2.102 \cdot \text{PO_proportion}
-$$
+
+### Bootstrap
+After fitting the MLR model, we applied the bootstrap to evaluate how stable our results are under repeated sampling. The usual regression output relies on assumptions such as normality and constant variance, which may not fully hold in our data. Bootstrap resampling lets us approximate the sampling distribution of key estimates directly from the data, providing more robust standard errors and confidence intervals. This helps us assess whether the model’s conclusions remain consistent across resampled datasets.
+
+```{r}
+boot_straps =
+  regression_data |>
+  modelr::bootstrap(n = 5000)
+
+boot_results =
+  boot_straps |>
+  mutate(
+    models = map(
+      strap,
+      \(df) lm(
+        mean_glth ~ mean_mhlth + mean_depression + mean_access +
+                    mean_smoking + mean_binge + mean_sleep + mean_lpa +
+                    mean_diabetes + mean_bphigh + EI_proportion + PO_proportion,
+        data = df
+      )
+    ),
+    results = map(models, broom::tidy)
+  ) |>
+  select(-strap, -models) |>
+  unnest(results) |> 
+  select(term, estimate, p.value)
+
+boot_results
+
+boot_se =
+  boot_results |>
+  group_by(term) |>
+  summarize(boot_se = sd(estimate))
+
+boot_se
+```
+
+
+
 
