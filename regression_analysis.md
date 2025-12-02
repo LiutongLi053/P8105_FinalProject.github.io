@@ -110,6 +110,8 @@ summary(step_model) |>
 
 The final model based on MLR results in:
 
+### ELASTIC NET
+
 ### Bootstrap
 
 After fitting the MLR model, we applied the bootstrap to evaluate how
@@ -170,5 +172,3 @@ boot_se
     ## 12 mean_smoking     0.0859
 
 ### Cross Validation
-
-### ELASTIC NET
