@@ -1,10 +1,10 @@
 ---
 title: "regression_analysis"
-output: github_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE, warning = FALSE)
 ```
 
 ```{r, include=FALSE}
@@ -36,6 +36,7 @@ scale_fill_discrete = scale_fill_viridis_d
 set.seed(123)
 ```
 
+To build the regression model, I included `mean_mhlth`, `mean_depression`, `mean_access`, `mean_smoking`, `mean_binge`, `mean_sleep`, `mean_lpa`, `mean_diabetes`, `mean_bphigh`, `EI_proportion`, and `PO_proportion` because they represent key dimensions of community health, health behaviors, access to care, and socioeconomic conditions that are plausibly related to overall general health. Using these variables together helps capture multiple pathways influencing the outcome and reduces the risk of omitted-variable bias while improving the model’s explanatory power.
 
 ```{r, include=FALSE}
 # Merge the dataset for regression analysis.
@@ -95,6 +96,7 @@ regression_data =
 
 
 ### Multiple Linear Regression
+
 Fit the model
 ```{r}
 mlr_fit =
@@ -131,18 +133,36 @@ p2 =
 p1 + p2
 ```
 
-```{r}
-reduced_fit =
-  lm(mean_glth ~ mean_mhlth + mean_depression +
-       mean_smoking + mean_binge + mean_sleep + mean_lpa +
-       mean_diabetes + mean_bphigh +
-       EI_proportion + PO_proportion,
-     data = regression_data)
-
-full_fit = mlr_fit
-anova(reduced_fit, full_fit)
-```
-
 The residuals appear randomly scattered around zero without a clear pattern, suggesting that the linearity and constant variance assumptions are reasonably satisfied.
 
 Most points fall close to the reference line, indicating that the residuals are approximately normally distributed. A few deviations at the tails are expected with small samples (n = 50), but overall the normality assumption is acceptable.
+
+After fitting the MLR model, we apply stepwise selection to efficiently identify the most informative predictors while keeping the key electricity variables in the model.
+```{r}
+lower_model =
+  lm(mean_glth ~ EI_proportion + PO_proportion,
+     data = regression_data)
+
+step_model =
+  step(mlr_fit,
+       scope = list(lower = formula(lower_model),
+                    upper = formula(mlr_fit)),
+       direction = "both",
+       trace = FALSE)
+
+summary(step_model) |>
+  broom::tidy(conf.int = TRUE) |>
+  select(term, estimate, conf.low, conf.high, p.value) |>
+  knitr::kable(digits = 3)
+```
+
+The final model based on MLR results in:
+
+$$ \text{mean_glth} = -5.635  + 0.556\cdot\text{mean_mhlth}
+- 0.115 \cdot \text{mean_sleep}
++ 0.226 \cdot \text{mean_lpa}
++ 0.744 \cdot \text{mean_diabetes}
++ 13.841 \cdot \text{EI_proportion}
+- 2.102 \cdot \text{PO_proportion}
+$$
+
