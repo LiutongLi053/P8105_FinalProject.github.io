@@ -112,6 +112,71 @@ The final model based on MLR results in:
 
 ### ELASTIC NET
 
+Because our EDA shows that the two electricity variables are strongly
+correlated, the MLR model is likely to produce unstable estimates. Using
+Elastic Net helps prevent overfitting while simultaneously stabilizing
+the coefficient estimates and shrinking unnecessary parameters toward
+zero. Hence, we expec that this may leads to a more robust and
+interpretable model.
+
+We set $\alpha = 0.5$ to balance the Ridge and Lasso penalties within
+the Elastic Net framework. We then used `cv.glmnet()` to identify the
+optimal value of $\lambda$. This function performs 10-fold
+cross-validation by default, repeatedly splitting the data into ten
+parts, training the model on nine parts, and validating it on the
+remaining part to select the $\lambda$ that minimizes the
+cross-validated error
+
+``` r
+y <- regression_data$mean_glth
+
+X <- regression_data |> 
+  select(
+    mean_mhlth, mean_depression, mean_access, mean_smoking,
+    mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+    EI_proportion, PO_proportion
+  ) |> 
+  as.matrix()
+
+cv_en <- cv.glmnet(X, y, alpha = 0.5)
+lambda_best <- cv_en$lambda.min
+fit_en <- glmnet(X, y, alpha = 0.5, lambda = lambda_best)
+
+coef_en <- coef(fit_en)
+coef_en
+```
+
+    ## 12 x 1 sparse Matrix of class "dgCMatrix"
+    ##                           s0
+    ## (Intercept)     -7.217287806
+    ## mean_mhlth       0.487334980
+    ## mean_depression  0.004961792
+    ## mean_access      0.045936144
+    ## mean_smoking     0.027022483
+    ## mean_binge       .          
+    ## mean_sleep       .          
+    ## mean_lpa         0.193657398
+    ## mean_diabetes    0.534606842
+    ## mean_bphigh      0.032181274
+    ## EI_proportion   10.817492000
+    ## PO_proportion   -0.819165535
+
+``` r
+pred_en <- predict(fit_en, X) |> as.numeric()
+
+r2_en <- 1 - sum((y - pred_en)^2) / sum((y - mean(y))^2)
+r2_en
+```
+
+    ## [1] 0.9567934
+
+``` r
+rmse_en <- sqrt(mean((y - pred_en)^2))
+rmse_en
+```
+
+    ## [1] 0.6592415
+
 ### Bootstrap
 
 After fitting the MLR model, we applied the bootstrap to evaluate how

@@ -12,6 +12,7 @@ library(tidyverse)
 library(readxl)
 library(knitr)
 library(patchwork)
+library(glmnet)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -160,6 +161,35 @@ The final model based on MLR results in:
 
 ### ELASTIC NET 
 
+Because our EDA shows that the two electricity variables are strongly correlated, the MLR model is likely to produce unstable estimates. Using Elastic Net helps prevent overfitting while simultaneously stabilizing the coefficient estimates and shrinking unnecessary parameters toward zero. Hence, we expec that this may leads to a more robust and interpretable model.
+
+We set $\alpha = 0.5$ to balance the Ridge and Lasso penalties within the Elastic Net framework. We then used `cv.glmnet()` to identify the optimal value of $\lambda$. This function performs 10-fold cross-validation by default, repeatedly splitting the data into ten parts, training the model on nine parts, and validating it on the remaining part to select the  $\lambda$ that minimizes the cross-validated error
+
+```{r}
+y <- regression_data$mean_glth
+
+X <- regression_data |> 
+  select(
+    mean_mhlth, mean_depression, mean_access, mean_smoking,
+    mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+    EI_proportion, PO_proportion
+  ) |> 
+  as.matrix()
+
+cv_en <- cv.glmnet(X, y, alpha = 0.5)
+lambda_best <- cv_en$lambda.min
+fit_en <- glmnet(X, y, alpha = 0.5, lambda = lambda_best)
+
+coef_en <- coef(fit_en)
+coef_en
+
+pred_en <- predict(fit_en, X) |> as.numeric()
+
+r2_en <- 1 - sum((y - pred_en)^2) / sum((y - mean(y))^2)
+r2_en
+rmse_en <- sqrt(mean((y - pred_en)^2))
+rmse_en
+```
 
 
 ### Bootstrap
