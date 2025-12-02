@@ -130,7 +130,7 @@ cross-validated error
 ``` r
 y <- regression_data$mean_glth
 
-X <- regression_data |> 
+x <- regression_data |> 
   select(
     mean_mhlth, mean_depression, mean_access, mean_smoking,
     mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
@@ -138,9 +138,9 @@ X <- regression_data |>
   ) |> 
   as.matrix()
 
-cv_en <- cv.glmnet(X, y, alpha = 0.5)
+cv_en <- cv.glmnet(x, y, alpha = 0.5)
 lambda_best <- cv_en$lambda.min
-fit_en <- glmnet(X, y, alpha = 0.5, lambda = lambda_best)
+fit_en <- glmnet(x, y, alpha = 0.5, lambda = lambda_best)
 
 coef_en <- coef(fit_en)
 coef_en
@@ -162,7 +162,7 @@ coef_en
     ## PO_proportion   -0.819165535
 
 ``` r
-pred_en <- predict(fit_en, X) |> as.numeric()
+pred_en <- predict(fit_en, x) |> as.numeric()
 
 r2_en <- 1 - sum((y - pred_en)^2) / sum((y - mean(y))^2)
 r2_en
@@ -177,63 +177,127 @@ rmse_en
 
     ## [1] 0.6592415
 
-### Robust Regression
-
-We included a robust regression as a sensitivity check because OLS is
-highly sensitive to outliers and high-leverage points. Several variables
-in our dat such as `mean_smoking`, `mean_binge`, `mean_sleep`, and the
-electricity proportions—are prone to extreme values at the state level.
-Robust regression down-weights these observations, allowing us to verify
-whether the direction and importance of the predictors remain consistent
-when the influence of outliers is reduced.
-
-``` r
-fit_robust <- MASS::rlm(
-  mean_glth ~ mean_mhlth + mean_depression + mean_access + mean_smoking +
-    mean_binge + mean_sleep + mean_lpa + mean_diabetes + mean_bphigh +
-    EI_proportion + PO_proportion,
-  data = regression_data
-)
-
-coef_robust <- coef(fit_robust)
-coef_robust |> knitr::kable(digits = 3)
-```
-
-|                 |      x |
-|:----------------|-------:|
-| (Intercept)     | -6.399 |
-| mean_mhlth      |  0.549 |
-| mean_depression |  0.012 |
-| mean_access     |  0.026 |
-| mean_smoking    | -0.029 |
-| mean_binge      |  0.007 |
-| mean_sleep      | -0.098 |
-| mean_lpa        |  0.239 |
-| mean_diabetes   |  0.664 |
-| mean_bphigh     |  0.024 |
-| EI_proportion   | 13.193 |
-| PO_proportion   | -2.171 |
-
-``` r
-pred_robust <- predict(fit_robust, regression_data)
-
-r2_robust <- 1 - sum((regression_data$mean_glth - pred_robust)^2) /
-  sum((regression_data$mean_glth - mean(regression_data$mean_glth))^2)
-
-rmse_robust <- sqrt(mean((regression_data$mean_glth - pred_robust)^2))
-
-r2_robust
-```
-
-    ## [1] 0.9616802
-
-``` r
-rmse_robust
-```
-
-    ## [1] 0.6208425
-
 ### Cross Validation
+
+fit a base-level model that only depend on electronical variables.
+
+``` r
+mlr_basic =  lm(mean_glth ~EI_proportion * PO_proportion ,
+     data = regression_data)
+
+summary(mlr_basic) 
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = mean_glth ~ EI_proportion * PO_proportion, data = regression_data)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.6103 -0.8722 -0.1769  1.0968  3.9032 
+    ## 
+    ## Coefficients:
+    ##                             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)                    4.135      2.242   1.844   0.0716 .  
+    ## EI_proportion                 43.079      8.934   4.822 1.59e-05 ***
+    ## PO_proportion                 -6.480     10.400  -0.623   0.5363    
+    ## EI_proportion:PO_proportion   25.192     37.882   0.665   0.5094    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 1.642 on 46 degrees of freedom
+    ## Multiple R-squared:  0.7534, Adjusted R-squared:  0.7373 
+    ## F-statistic: 46.85 on 3 and 46 DF,  p-value: 4.981e-14
+
+``` r
+cv_df =
+  crossv_mc(regression_data, n = 100) |>
+  mutate(
+    train = map(train, as_tibble),
+    test  = map(test, as_tibble)
+  )
+
+cv_df =
+  cv_df |>
+  mutate(
+    # Model 1: Full MLR
+    model_1 = map(train, \(df)
+      lm(mean_glth ~ mean_mhlth + mean_depression + mean_access +
+           mean_smoking + mean_binge + mean_sleep + mean_lpa +
+           mean_diabetes + mean_bphigh + EI_proportion + PO_proportion,
+         data = df)
+    ),
+
+    # Model 2: Elastic Net (refit λ for each split)
+    model_2 = map(train, \(df) {
+      y <- df$mean_glth
+      X <- df |>
+        dplyr::select(
+          mean_mhlth, mean_depression, mean_access, mean_smoking,
+          mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+          EI_proportion, PO_proportion
+        ) |>
+        as.matrix()
+
+      cvfit <- cv.glmnet(X, y, alpha = 0.5)
+      best_lambda <- cvfit$lambda.min
+      glmnet(X, y, alpha = 0.5, lambda = best_lambda)
+    }),
+
+    # Model 3: Electricity-only + Interaction
+    model_3 = map(train, \(df)
+      lm(mean_glth ~ EI_proportion * PO_proportion, data = df)
+    )
+  )
+
+cv_df =
+  cv_df |>
+  mutate(
+    rmse_model_1 = map2_dbl(model_1, test, \(fit, df)
+      rmse(fit, df)
+    ),
+
+    rmse_model_2 = map2_dbl(model_2, test, \(fit, df) {
+      y_test <- df$mean_glth
+      X_test <- df |>
+        dplyr::select(
+          mean_mhlth, mean_depression, mean_access, mean_smoking,
+          mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+          EI_proportion, PO_proportion
+        ) |> as.matrix()
+      pred <- predict(fit, X_test) |> as.numeric()
+      sqrt(mean((y_test - pred)^2))
+    }),
+
+    rmse_model_3 = map2_dbl(model_3, test, \(fit, df)
+      rmse(fit, df)
+    )
+  )
+```
+
+``` r
+cv_df |>
+  dplyr::select(starts_with("rmse")) |>
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) |>
+  ggplot(aes(x = model, y = rmse, fill = model)) +
+  geom_violin() +
+  ggtitle("Comparison of RMSE Across Models")
+```
+
+<img src="regression_analysis_files/figure-gfm/unnamed-chunk-10-1.png" width="90%" />
+
+Model based on Elastic Net achieves the lowest and most stable RMSE
+across the cross-validation replicates, indicating superior predictive
+performance and generalization ability. The full MLR model performs
+moderately well but shows higher variability, suggesting mild
+overfitting. The electricity-only model has the highest RMSE, confirming
+that electricity variables alone are insufficient to explain variations
+in mean_glth.
 
 ### Bootstrap
 
@@ -256,19 +320,32 @@ boot_results =
   mutate(
     models = map(
       strap,
-      \(df) lm(
-        mean_glth ~ mean_mhlth + mean_depression + mean_access +
-                    mean_smoking + mean_binge + mean_sleep + mean_lpa +
-                    mean_diabetes + mean_bphigh + EI_proportion + PO_proportion,
-        data = df
-      )
-    ),
-    results = map(models, broom::tidy)
-  ) |>
-  select(-strap, -models) |>
-  unnest(results) |> 
-  select(term, estimate, p.value)
+      \(s) {
+        df = s$data
 
+        Xb = df |>
+          select(
+            mean_mhlth, mean_depression, mean_access, mean_smoking,
+            mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+            EI_proportion, PO_proportion
+          ) |>
+          as.matrix()
+
+        yb = df$mean_glth
+
+        cvb = cv.glmnet(Xb, yb, alpha = 0.5)
+        cb = coef(cvb, s = cvb$lambda.min)
+
+        tibble(
+          term = rownames(cb),
+          estimate = as.numeric(cb)
+        )
+      }
+    )
+  ) |>
+  select(-strap) |>
+  unnest(models) |>
+  filter(term != "(Intercept)")
 
 boot_se =
   boot_results |>
@@ -278,18 +355,17 @@ boot_se =
 boot_se
 ```
 
-    ## # A tibble: 12 × 2
-    ##    term            boot_se
-    ##    <chr>             <dbl>
-    ##  1 (Intercept)      2.55  
-    ##  2 EI_proportion    4.21  
-    ##  3 PO_proportion    0.958 
-    ##  4 mean_access      0.0363
-    ##  5 mean_binge       0.0558
-    ##  6 mean_bphigh      0.0837
-    ##  7 mean_depression  0.0757
-    ##  8 mean_diabetes    0.189 
-    ##  9 mean_lpa         0.0894
-    ## 10 mean_mhlth       0.169 
-    ## 11 mean_sleep       0.0816
-    ## 12 mean_smoking     0.0859
+    ## # A tibble: 11 × 2
+    ##    term             boot_se
+    ##    <chr>              <dbl>
+    ##  1 EI_proportion   0.466   
+    ##  2 PO_proportion   0.328   
+    ##  3 mean_access     0.00374 
+    ##  4 mean_binge      0       
+    ##  5 mean_bphigh     0.000639
+    ##  6 mean_depression 0.00201 
+    ##  7 mean_diabetes   0.0306  
+    ##  8 mean_lpa        0.00685 
+    ##  9 mean_mhlth      0.0162  
+    ## 10 mean_sleep      0.0227  
+    ## 11 mean_smoking    0.00901

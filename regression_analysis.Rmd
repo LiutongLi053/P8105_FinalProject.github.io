@@ -1,10 +1,6 @@
 ---
 title: "regression_analysis"
-output:
-  html_document:
-    code_folding: hide
-    toc: true
-    theme: flatly
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -173,7 +169,7 @@ We set $\alpha = 0.5$ to balance the Ridge and Lasso penalties within the Elasti
 ```{r}
 y <- regression_data$mean_glth
 
-X <- regression_data |> 
+x <- regression_data |> 
   select(
     mean_mhlth, mean_depression, mean_access, mean_smoking,
     mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
@@ -181,14 +177,14 @@ X <- regression_data |>
   ) |> 
   as.matrix()
 
-cv_en <- cv.glmnet(X, y, alpha = 0.5)
+cv_en <- cv.glmnet(x, y, alpha = 0.5)
 lambda_best <- cv_en$lambda.min
-fit_en <- glmnet(X, y, alpha = 0.5, lambda = lambda_best)
+fit_en <- glmnet(x, y, alpha = 0.5, lambda = lambda_best)
 
 coef_en <- coef(fit_en)
 coef_en
 
-pred_en <- predict(fit_en, X) |> as.numeric()
+pred_en <- predict(fit_en, x) |> as.numeric()
 
 r2_en <- 1 - sum((y - pred_en)^2) / sum((y - mean(y))^2)
 r2_en
@@ -197,6 +193,8 @@ rmse_en
 ```
 
 ### Cross Validation
+
+fit a base-level model that only depend on electronical variables. 
 
 ```{r}
 mlr_basic =  lm(mean_glth ~EI_proportion * PO_proportion ,
@@ -287,6 +285,7 @@ cv_df |>
 
 ```
 
+Model based on Elastic Net achieves the lowest and most stable RMSE across the cross-validation replicates, indicating superior predictive performance and generalization ability. The full MLR model performs moderately well but shows higher variability, suggesting mild overfitting. The electricity-only model has the highest RMSE, confirming that electricity variables alone are insufficient to explain variations in mean_glth.
 
 ### Bootstrap
 After fitting the MLR model, we applied the bootstrap to evaluate how stable our results are under repeated sampling. The usual regression output relies on assumptions such as normality and constant variance, which may not fully hold in our data. Bootstrap resampling lets us approximate the sampling distribution of key estimates directly from the data, providing more robust standard errors and confidence intervals. This helps us assess whether the model’s conclusions remain consistent across resampled datasets.
@@ -301,19 +300,32 @@ boot_results =
   mutate(
     models = map(
       strap,
-      \(df) lm(
-        mean_glth ~ mean_mhlth + mean_depression + mean_access +
-                    mean_smoking + mean_binge + mean_sleep + mean_lpa +
-                    mean_diabetes + mean_bphigh + EI_proportion + PO_proportion,
-        data = df
-      )
-    ),
-    results = map(models, broom::tidy)
-  ) |>
-  select(-strap, -models) |>
-  unnest(results) |> 
-  select(term, estimate, p.value)
+      \(s) {
+        df = s$data
 
+        Xb = df |>
+          select(
+            mean_mhlth, mean_depression, mean_access, mean_smoking,
+            mean_binge, mean_sleep, mean_lpa, mean_diabetes, mean_bphigh,
+            EI_proportion, PO_proportion
+          ) |>
+          as.matrix()
+
+        yb = df$mean_glth
+
+        cvb = cv.glmnet(Xb, yb, alpha = 0.5)
+        cb = coef(cvb, s = cvb$lambda.min)
+
+        tibble(
+          term = rownames(cb),
+          estimate = as.numeric(cb)
+        )
+      }
+    )
+  ) |>
+  select(-strap) |>
+  unnest(models) |>
+  filter(term != "(Intercept)")
 
 boot_se =
   boot_results |>
