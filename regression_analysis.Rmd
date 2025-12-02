@@ -185,7 +185,6 @@ boot_results =
   unnest(results) |> 
   select(term, estimate, p.value)
 
-boot_results
 
 boot_se =
   boot_results |>

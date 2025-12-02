@@ -144,25 +144,7 @@ boot_results =
   unnest(results) |> 
   select(term, estimate, p.value)
 
-boot_results
-```
 
-    ## # A tibble: 60,000 × 3
-    ##    term            estimate   p.value
-    ##    <chr>              <dbl>     <dbl>
-    ##  1 (Intercept)     -4.20    0.0790   
-    ##  2 mean_mhlth       0.592   0.0000116
-    ##  3 mean_depression -0.0629  0.405    
-    ##  4 mean_access      0.0397  0.279    
-    ##  5 mean_smoking    -0.0225  0.799    
-    ##  6 mean_binge       0.00419 0.940    
-    ##  7 mean_sleep      -0.128   0.0286   
-    ##  8 mean_lpa         0.180   0.0173   
-    ##  9 mean_diabetes    0.764   0.00104  
-    ## 10 mean_bphigh      0.0106  0.870    
-    ## # ℹ 59,990 more rows
-
-``` r
 boot_se =
   boot_results |>
   group_by(term) |>
