@@ -186,3 +186,7 @@ boot_se
     ## 10 mean_mhlth       0.169 
     ## 11 mean_sleep       0.0816
     ## 12 mean_smoking     0.0859
+
+### Cross Validation
+
+### ELASTIC NET
