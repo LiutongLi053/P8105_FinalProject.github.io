@@ -1,0 +1,148 @@
+---
+title: "regression_analysis"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%",
+  fig.retina = 2,
+  dpi = 320
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+```{r, include=FALSE}
+set.seed(123)
+```
+
+
+```{r, include=FALSE}
+# Merge the dataset for regression analysis.
+RECS_EI = read_csv("EDA/clean data/RECS_Energy_Insecurity.csv")
+RECS_EI_code = read_xlsx("EDA/clean data/CodeBook_State_Level_Energy_Insecurity.xlsx")
+PLACES = read_csv("EDA/clean data/PLACES_Census_Tract_Data.csv")
+PLACES_code = read_csv("EDA/clean data/Codebook_PLACES.csv")
+
+mental_health_vars = PLACES |>
+  select(
+    state_desc,
+    county_name,
+    tract_fips,
+    mhlth_crude_prev,
+    depression_crude_prev,
+    access2_crude_prev,
+    csmoking_crude_prev,
+    binge_crude_prev,
+    sleep_crude_prev,
+    lpa_crude_prev,
+    ghlth_crude_prev,
+    diabetes_crude_prev,
+    bphigh_crude_prev
+  )
+
+state_means =
+  mental_health_vars |>
+  group_by(state_desc) |>
+  summarise(
+    mean_mhlth = mean(mhlth_crude_prev, na.rm = TRUE),
+    mean_depression = mean(depression_crude_prev, na.rm = TRUE),
+    mean_access = mean(access2_crude_prev, na.rm = TRUE),
+    mean_smoking = mean(csmoking_crude_prev, na.rm = TRUE),
+    mean_binge = mean(binge_crude_prev, na.rm = TRUE),
+    mean_sleep = mean(sleep_crude_prev, na.rm = TRUE),
+    mean_lpa = mean(lpa_crude_prev, na.rm = TRUE),
+    mean_glth = mean(ghlth_crude_prev, na.rm = TRUE),
+    mean_diabetes = mean(diabetes_crude_prev, na.rm = TRUE),
+    mean_bphigh = mean(bphigh_crude_prev, na.rm = TRUE)
+  ) |>
+  ungroup()
+
+recs_vars =
+  RECS_EI |>
+  select(
+    state,
+    EI_proportion,
+    PO_proportion
+  )
+
+regression_data =
+  state_means |>
+  rename(state = state_desc) |>
+  left_join(recs_vars, by = "state")
+
+```
+
+
+### Multiple Linear Regression
+Fit the model
+```{r}
+mlr_fit =
+  lm(mean_glth ~ mean_mhlth + mean_depression + mean_access +
+       mean_smoking + mean_binge + mean_sleep + mean_lpa +
+       mean_diabetes + mean_bphigh + EI_proportion + PO_proportion,
+     data = regression_data)
+
+summary(mlr_fit) |> 
+  broom::tidy(conf.int = TRUE) |> 
+  select(term, estimate, conf.low, conf.high, p.value) |> 
+  knitr::kable(digits = 3)
+```
+
+Check for key assumptions
+
+```{r}
+p1 =
+  regression_data |>
+  modelr::add_residuals(mlr_fit) |>
+  modelr::add_predictions(mlr_fit) |>
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(x = "Fitted values", y = "Residuals",
+       title = "Residuals vs Fitted")
+
+p2 =
+  ggplot(mlr_fit, aes(sample = .resid)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Normal Q-Q Plot of Residuals")
+
+p1 + p2
+```
+
+```{r}
+reduced_fit =
+  lm(mean_glth ~ mean_mhlth + mean_depression +
+       mean_smoking + mean_binge + mean_sleep + mean_lpa +
+       mean_diabetes + mean_bphigh +
+       EI_proportion + PO_proportion,
+     data = regression_data)
+
+full_fit = mlr_fit
+anova(reduced_fit, full_fit)
+```
+
+The residuals appear randomly scattered around zero without a clear pattern, suggesting that the linearity and constant variance assumptions are reasonably satisfied.
+
+Most points fall close to the reference line, indicating that the residuals are approximately normally distributed. A few deviations at the tails are expected with small samples (n = 50), but overall the normality assumption is acceptable.
