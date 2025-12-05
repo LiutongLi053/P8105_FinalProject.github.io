@@ -258,7 +258,7 @@ The cleaned and integrated dataset contains:
 
 ```{r load-recs-data}
 # Load RECS data
-RECS_EI <- read_csv("Report/Data/RECS_Energy_Insecurity.csv")
+RECS_EI <- read_csv("Data/RECS_Energy_Insecurity.csv")
 
 # Calculate summary statistics
 EI_summary <- RECS_EI %>%
@@ -367,7 +367,7 @@ p_regression
 
 ```{r load-places-data}
 # Load PLACES data
-PLACES <- read_csv("Report/Data/PLACES_Census_Tract_Data.csv")
+PLACES <- read_csv("Data/PLACES_Census_Tract_Data.csv")
 
 # Calculate mental health summaries
 mental_summary <- PLACES %>%
@@ -465,7 +465,7 @@ p_ei_mhlth_annotated
 
 **Key Finding**: There is a strong positive correlation (r = `r round(cor_test$estimate, 3)`, p < 0.001) between state-level energy insecurity and poor mental health prevalence. States with higher energy insecurity tend to have worse mental health outcomes.
 
-### 3.5 Health Indicators Across EI Groups
+### 3.5 Distribution of Health Indicators Across Census Tracts
 
 ```{r health-indicators-analysis}
 # Prepare health indicators data
@@ -482,6 +482,26 @@ health_vars <- PLACES %>%
     ghlth_crude_prev,
     diabetes_crude_prev,
     bphigh_crude_prev
+  )
+
+# Reshape health indicators to long format: one row per (state, variable)
+health_long =
+  health_vars |>
+  pivot_longer(
+    cols = -state_desc,
+    names_to = "variable",
+    values_to = "value"
+  )
+
+# Plot the marginal distribution of each health indicator across census tracts
+ggplot(health_long, aes(x = value)) +
+  geom_histogram(bins = 40, fill = "steelblue", alpha = 0.7) +
+  facet_wrap(~ variable, scales = "free") +
+  theme_minimal() +
+  labs(
+    title = "Distribution of Health Indicators Across Census Tracts",
+    x = "Value",
+    y = "Count"
   )
 
 # Aggregate to state level
@@ -518,7 +538,12 @@ health_by_ei <- state_health %>%
                            "diabetes" = "Diabetes",
                            "bphigh" = "High Blood Pressure"))
 ```
+**Pattern**:Across census tracts, health indicators vary widely in their distributions.
+Some measures are tightly clustered, while others show broader or right-skewed patterns.
+This variation illustrates unequal health burdens across communities and motivates comparing these indicators across states by energy insecurity levels.
 
+
+### 3.6 Health Indicators Across EI Groups
 ```{r plot-health-by-ei}
 # Create comparison plot
 p_health_ei <- health_by_ei %>%
