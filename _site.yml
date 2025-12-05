@@ -2,22 +2,22 @@ name: "Final project"
 output_dir: "."
 
 navbar:
-  title: "My Project Title"
+  title: ""
   right:
     - text: "Home"
       href: index.html
     - text: "Proposal"
-      href: proposal.html
+      href: Proposal.html
     - text: "Data"
-      href: Data_Cleaning.html
+      href: data.html
     - text: "EDA"
-      href: eda.html
+      href: EDA.html
     - text: "Regression"
       href: regression_analysis.html
     - text: "Report"
-      href: report.html
+      href: Report_v1.html
     - text: "shiny"
-      href: Shiny/shiny.html
+      href: https://haoyang.shinyapps.io/shiny/
     - icon: fa-brands fa-youtube
       href: https://youtu.be/展示还没定下来
     - icon: fa-envelope fa-lg
@@ -29,5 +29,4 @@ output:
   html_document:
     theme: cosmo
     highlight: textmate
-  
 

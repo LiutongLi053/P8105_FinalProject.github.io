@@ -1,11 +1,8 @@
 ---
-output:
-  prettydoc::html_pretty:
-    theme: leonids
+output: html_document
 ---
 
 <style>
-/* ===== 全局基础设置 ===== */
 html, body {
   margin: 0;
   padding: 0;
@@ -542,13 +539,13 @@ htmltools::div(
 <li><strong>Methodology:</strong> A statisitcal method on a quantitative analysis.</li>
 </ul>
 <p style="text-align:right; margin-top:15px;">
-  <a href="proposal.html" style="color:#3498db; font-weight:600; text-decoration:none;">
+  <a href="Proposal.html" style="color:#3498db; font-weight:600; text-decoration:none;">
     Learn More →
   </a>
 </p>
 </div>
 </div>
-<br>
+
 
 <!-------- Data -------->
 <div class="card" onclick="toggleCard(this)">
@@ -597,7 +594,7 @@ htmltools::div(
 <li><strong>Visualization:</strong> Scatter plots, maps, and distribution charts.</li>
 </ul>
 <p style="text-align:right; margin-top:15px;">
-  <a href="eda.html" style="color:#3498db; font-weight:600; text-decoration:none;">
+  <a href="EDA.html" style="color:#3498db; font-weight:600; text-decoration:none;">
     Learn More →
   </a>
 </p>
@@ -624,7 +621,7 @@ htmltools::div(
 <li><strong>Validation:</strong> Train/test splits and cross-validation to assess performance.</li>
 <li><strong>Focus:</strong> understand whether and how energy insecurity contributes to poorer health outcomes, and which variables most strongly influence these relationships.</li>
 </ul><p style="text-align:right; margin-top:15px;">
-  <a href="model.html" style="color:#3498db; font-weight:600; text-decoration:none;">
+  <a href="Regression_analysis.html" style="color:#3498db; font-weight:600; text-decoration:none;">
     Learn More →
   </a>
 </p>
@@ -647,7 +644,7 @@ htmltools::div(
 <div class="card-content">
 <p>The final report presents a clear narrative of our project, summarizing the motivation, methods, results, and key insights that link energy insecurity to mental health outcomes across the U.S.</p>
 <p style="text-align:right; margin-top:15px;">
-  <a href="report.html" style="color:#3498db; font-weight:600; text-decoration:none;">
+  <a href="Report_v1.html" style="color:#3498db; font-weight:600; text-decoration:none;">
     Learn More →
   </a>
 </p>
@@ -661,7 +658,7 @@ htmltools::div(
 <div style="display: flex; align-items: center;">
 <div class="card-icon"><i class="fa-solid fa-chart-column"></i></div>
 <div class="card-title-wrapper">
-<div class="card-title">Result</div>
+<div class="card-title">Shiny</div>
 <div class="card-subtitle">Key Findings</div>
 </div>
 </div>
@@ -671,7 +668,7 @@ htmltools::div(
 <p>The Shiny app offers an interactive way to explore the data and results, allowing users to visualize patterns, compare states, and engage with the findings in a more intuitive format.</p>
 
 <p style="text-align:right; margin-top:15px;">
-  <a href="result.html" style="color:#3498db; font-weight:600; text-decoration:none;">
+  <a href="https://haoyang.shinyapps.io/shiny/" style="color:#3498db; font-weight:600; text-decoration:none;">
     Learn More →
   </a>
 </p>
