@@ -297,7 +297,7 @@ After fitting the MLR model, we applied the bootstrap to evaluate how stable our
 ```{r}
 boot_straps =
   regression_data |>
-  modelr::bootstrap(n = 10)
+  modelr::bootstrap(n = 5000)
 
 boot_results =
   boot_straps |>

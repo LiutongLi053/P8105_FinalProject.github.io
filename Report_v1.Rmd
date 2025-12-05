@@ -655,7 +655,7 @@ kable(coef_en,
 set.seed(123)
 
 # Create train-test splits
-cv_df <- crossv_mc(regression_data, n = 100) %>%
+cv_df <- crossv_mc(regression_data, n = 5000) %>%
   mutate(
     train = map(train, as_tibble),
     test = map(test, as_tibble)
