@@ -1,0 +1,215 @@
+---
+title: "Shiny Dashboard of the data"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+runtime: shiny
+---
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(flexdashboard)
+library(shiny)
+library(broom)  
+library(plotly)
+```
+
+<!--Prepare data and output-->
+
+```{r}
+RECS_EI = read_csv("RECS_Energy_Insecurity.csv")
+RECS_EI_code = read_xlsx("CodeBook_State_Level_Energy_Insecurity.xlsx")
+PLACES = read_csv("PLACES_Census_Tract_Data.csv")
+PLACES_code = read_csv("Codebook_PLACES.csv")
+
+mental_health_vars = PLACES |>
+  select(
+    state_desc,
+    county_name,
+    tract_fips,
+    mhlth_crude_prev,
+    depression_crude_prev,
+    access2_crude_prev,
+    csmoking_crude_prev,
+    binge_crude_prev,
+    sleep_crude_prev,
+    lpa_crude_prev,
+    ghlth_crude_prev,
+    diabetes_crude_prev,
+    bphigh_crude_prev
+  )
+
+state_means =
+  mental_health_vars |>
+  group_by(state_desc) |>
+  summarise(
+    mean_mhlth = mean(mhlth_crude_prev, na.rm = TRUE),
+    mean_depression = mean(depression_crude_prev, na.rm = TRUE),
+    mean_access = mean(access2_crude_prev, na.rm = TRUE),
+    mean_smoking = mean(csmoking_crude_prev, na.rm = TRUE),
+    mean_binge = mean(binge_crude_prev, na.rm = TRUE),
+    mean_sleep = mean(sleep_crude_prev, na.rm = TRUE),
+    mean_lpa = mean(lpa_crude_prev, na.rm = TRUE),
+    mean_glth = mean(ghlth_crude_prev, na.rm = TRUE),
+    mean_diabetes = mean(diabetes_crude_prev, na.rm = TRUE),
+    mean_bphigh = mean(bphigh_crude_prev, na.rm = TRUE)
+  ) |>
+  ungroup()
+
+recs_vars =
+  RECS_EI |>
+  select(state, EI_proportion, PO_proportion)
+
+regression_data =
+  state_means |>
+  rename(state = state_desc) |>
+  left_join(recs_vars, by = "state")
+
+outcome <- c(
+  "Poor mental health days "       = "mean_mhlth",
+  "Depression "              = "mean_depression",
+  "Health care access "          = "mean_access",
+  "Current smoking "            = "mean_smoking",
+  "Binge drinking "               = "mean_binge",
+  "Short sleep "                  = "mean_sleep",
+  "Physical inactivity "            = "mean_lpa",
+  "General poor health "           = "mean_glth",
+  "Diabetes "                  = "mean_diabetes",
+  "High blood pressure "         = "mean_bphigh"
+)
+
+elec_type <- c(
+  "Energy insecurity (EI_proportion)" = "EI_proportion",
+  "Payment overdue (PO_proportion)"   = "PO_proportion"
+)
+
+```
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+selectInput(
+  inputId = "elec_var",
+  label   = "Electricity insecurity measure:",
+  choices = elec_type,
+  selected = "EI_proportion"
+)
+selectInput(
+  inputId = "outcome_var",
+  label   = "Outcome:",
+  choices = outcome,
+  selected = "mean_mhlth"
+)
+```
+
+Column {data-width=550}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+
+
+
+renderPlotly({
+  xvar <- input[["elec_var"]]
+  
+  regression_data1 <- regression_data |>
+    arrange(desc(.data[[xvar]])) |>
+    mutate(elec_value = .data[[xvar]],
+           state = fct_reorder(state, elec_value))
+  plot_ly(
+    data = regression_data1,
+    x = ~ elec_value,
+    y = ~ state,
+    type = "bar",
+    orientation = "h",
+    marker = list(
+      color = ~ elec_value,
+      colorscale = "Viridis",
+      showscale = FALSE,
+      colorbar = list(title = names(elec_type)[elec_type == xvar])
+    ),
+    hovertemplate = paste0(
+      "<b>%{y}</b><br>",
+      names(elec_type)[elec_type == xvar],
+      ": %{x:.3f}<extra></extra>"
+    )
+  ) |>
+    layout(
+      title = "States ranked by electricity insecurity",
+      xaxis = list(title = names(elec_type)[elec_type == xvar]),
+      yaxis = list(title = "")
+    )
+})
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderPlotly({
+  xvar <- input[["elec_var"]]
+  yvar <- input[["outcome_var"]]
+  
+  p <- ggplot(regression_data, aes(x = .data[[xvar]], y = .data[[yvar]], label = state)) +
+    geom_point(size = 2, alpha = 0.8) +
+    geom_smooth(method = "lm",
+                se = FALSE,
+                color = "grey45") +
+    labs(x = names(elec_type)[elec_type == xvar],
+         y = names(outcome)[outcome == yvar],
+         title = "State-level association") +
+    theme_minimal()
+  
+  ggplotly(p, tooltip = c("label", "x", "y"))
+})
+```
+
+### Chart C
+
+```{r}
+
+renderPlotly({
+  xvar <- input[["elec_var"]]
+  yvar <- input[["outcome_var"]]
+  
+  regression_data2 <- regression_data |>
+    mutate(
+      elec_value    = .data[[xvar]],
+      outcome_value = .data[[yvar]],
+      elec_group = ntile(elec_value, 3),
+      elec_group = factor(
+        elec_group,
+        levels = 1:3,
+        labels = c("Low insecurity", "Medium", "High insecurity")
+      )
+    )
+  
+  plot_ly(
+    data = regression_data2,
+    x = ~ elec_group,
+    y = ~ outcome_value,
+    color = ~ elec_group,
+    type = "box",
+    boxmean = TRUE,
+    hovertemplate = paste0("%{x}<br>", names(outcome)[outcome == yvar], ": %{y:.3f}<extra></extra>")
+  ) |>
+    layout(
+      title = "Outcome by electricity insecurity group",
+      xaxis = list(title = ""),
+      yaxis = list(title = names(outcome)[outcome == yvar]),
+      showlegend = FALSE
+    )
+})
+
+```
+
