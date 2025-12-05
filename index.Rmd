@@ -8,21 +8,19 @@ html, body {
   padding: 0;
   height: 100%;
   font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f3f4f6 !important;  /* 想要的浅灰 */
+  background-color: #f3f4f6 !important; 
 }
 
-/* leonids / prettydoc 可能加白底的容器，统统改成透明或浅灰 */
 body > div,
 .main-container,
 .page,
 .page-header,
 div#content {
-  background-color: #f3f4f6 !important;  /* 也可以改成 transparent */
+  background-color: #f3f4f6 !important;  
   box-shadow: none !important;
   border: none !important;
 }
 
-/* 你原本想要的全宽 main-container 保留 */
 .main-container {
   max-width: 100% !important;
   padding: 0 !important;
