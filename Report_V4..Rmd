@@ -256,7 +256,7 @@ The cleaned and integrated dataset contains:
 
 ```{r load-recs-data}
 # Load RECS data
-RECS_EI <- read_csv("~/Downloads/RECS_Energy_Insecurity.csv")
+RECS_EI <- read_csv("Data/RECS_Energy_Insecurity.csv")
 
 # Calculate summary statistics
 EI_summary <- RECS_EI %>%
@@ -374,7 +374,7 @@ Outages contribute to EI but are not the primary driver—other structural facto
 
 ```{r load-places-data}
 # Load PLACES data
-PLACES <- read_csv("~/Downloads/PLACES_Census_Tract_Data.csv")
+PLACES <- read_csv("Data/PLACES_Census_Tract_Data.csv")
 
 # Calculate mental health summaries
 mental_summary <- PLACES %>%
