@@ -343,7 +343,7 @@ div.tocify {
   <a href="regression_analysis.html">Regression</a>
 </li>
 <li>
-  <a href="Report_v1.html">Report</a>
+  <a href="Report_v3.html">Report</a>
 </li>
 <li>
   <a href="https://haoyang.shinyapps.io/shiny/">shiny</a>
@@ -361,7 +361,7 @@ div.tocify {
   </a>
 </li>
 <li>
-  <a href="https://github.com/LiutongLi053">
+  <a href="https://github.com/LiutongLi053/P8105_FinalProject.github.io">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -713,12 +713,14 @@ role in shaping EI outcomes.</p>
 </div>
 <div id="eda-for-census" class="section level1">
 <h1>EDA for Census</h1>
-<p>Our research focuses on mental health, so I first examined the
+<p>Although our final analysis focuses on general health, mental health
+represents a key component of overall health and provides an informative
+starting point for exploratory analysis. Therefore, we first examine the
 distributions of poor mental health and depression prevalence across
-census tracts. Both distributions are slightly skewed to the right and
-unimodal. The average prevalence of poor mental health is 15.17, ranging
-from 6.1–33%. Depression shows a similar pattern, with an average
-prevalence of 20.545 and a range of 8.5–36.8%.
+census tracts. Both variables exhibit slightly right-skewed, unimodal
+distributions. The average prevalence of poor mental health is 15.17,
+ranging from 6.1–33%. Depression shows a similar pattern, with an
+average prevalence of 20.545 and a range of 8.5–36.8%.
 <img src="EDA_files/figure-html/unnamed-chunk-7-1.png" width="672" /><img src="EDA_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
 <p>Next, I aggregated the census-tract data to the state level by
 averaging mental health measures across counties.</p>
@@ -1514,13 +1516,17 @@ health, instead of their ranks.</p>
 ## F-statistic: 37.63 on 1 and 48 DF,  p-value: 1.561e-07</code></pre>
 <pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
 <p><img src="EDA_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
-<p>This simple regression supports a moderate positive association,
-which provides evidence supporting our initial expectation: states with
-higher energy insecurity tend to report higher levels of poor mental
-health, and the relationship is both statistically significant and
-practically meaningful. The model explains about 44% of the variation in
-poor mental health across states, suggesting that energy insecurity is a
-meaningful but not exclusive predictor.</p>
+<p>This simple regression reveals a moderate positive association,
+supporting our initial expectation that states with higher energy
+insecurity tend to report higher prevalence of poor mental health. The
+relationship is statistically significant and practically meaningful.
+Notably, because poor mental health is a key component of overall
+general health, this pattern also suggests a broader connection: states
+facing greater energy insecurity may experience wider declines in
+overall health. The model explains about 44% of the variation in poor
+mental health across states, indicating that energy insecurity is
+important but not the sole contributor to population health
+outcomes.</p>
 </div>
 <div id="eda-for-other-health-related-variables" class="section level1">
 <h1>EDA for other health related variables</h1>

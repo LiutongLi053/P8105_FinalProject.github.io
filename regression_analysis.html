@@ -343,7 +343,7 @@ div.tocify {
   <a href="regression_analysis.html">Regression</a>
 </li>
 <li>
-  <a href="Report_v1.html">Report</a>
+  <a href="Report_v3.html">Report</a>
 </li>
 <li>
   <a href="https://haoyang.shinyapps.io/shiny/">shiny</a>
@@ -361,7 +361,7 @@ div.tocify {
   </a>
 </li>
 <li>
-  <a href="https://github.com/LiutongLi053">
+  <a href="https://github.com/LiutongLi053/P8105_FinalProject.github.io">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -388,20 +388,59 @@ div.tocify {
 </div>
 
 
-<p>To build the regression model, I included <code>mean_mhlth</code>,
-<code>mean_depression</code>, <code>mean_access</code>,
-<code>mean_smoking</code>, <code>mean_binge</code>,
-<code>mean_sleep</code>, <code>mean_lpa</code>,
-<code>mean_diabetes</code>, <code>mean_bphigh</code>,
-<code>EI_proportion</code>, and <code>PO_proportion</code> because they
-represent key dimensions of community health, health behaviors, access
-to care, and socioeconomic conditions that are plausibly related to
-overall general health. Using these variables together helps capture
-multiple pathways influencing the outcome and reduces the risk of
-omitted-variable bias while improving the model’s explanatory power.</p>
 <div id="multiple-linear-regression" class="section level3">
 <h3>Multiple Linear Regression</h3>
-<p>Fit the model</p>
+<p>First let’s fit a simpe model of only <code>Energy Insecurity</code>
+and <code>Extended Power Outages</code>.</p>
+<pre class="r"><code>mlr_simple = lm(mean_glth ~ EI_proportion * PO_proportion, data = regression_data)
+
+summary(mlr_simple) |&gt;
+    broom::tidy(conf.int = TRUE) |&gt;
+    select(term, estimate, conf.low, conf.high, p.value) |&gt;
+    knitr::kable(digits = 3, caption = &quot;MLR simple model&quot;)</code></pre>
+<table>
+<caption>MLR simple model</caption>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">estimate</th>
+<th align="right">conf.low</th>
+<th align="right">conf.high</th>
+<th align="right">p.value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">(Intercept)</td>
+<td align="right">4.135</td>
+<td align="right">-0.379</td>
+<td align="right">8.649</td>
+<td align="right">0.072</td>
+</tr>
+<tr class="even">
+<td align="left">EI_proportion</td>
+<td align="right">43.079</td>
+<td align="right">25.095</td>
+<td align="right">61.063</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">PO_proportion</td>
+<td align="right">-6.480</td>
+<td align="right">-27.415</td>
+<td align="right">14.455</td>
+<td align="right">0.536</td>
+</tr>
+<tr class="even">
+<td align="left">EI_proportion:PO_proportion</td>
+<td align="right">25.192</td>
+<td align="right">-51.061</td>
+<td align="right">101.445</td>
+<td align="right">0.509</td>
+</tr>
+</tbody>
+</table>
+<p>More general full model.</p>
 <pre class="r"><code>mlr_fit = lm(mean_glth ~ mean_mhlth + mean_depression + mean_access + mean_smoking +
     mean_binge + mean_sleep + mean_lpa + mean_diabetes + mean_bphigh + EI_proportion +
     PO_proportion, data = regression_data)
@@ -409,8 +448,9 @@ omitted-variable bias while improving the model’s explanatory power.</p>
 summary(mlr_fit) |&gt;
     broom::tidy(conf.int = TRUE) |&gt;
     select(term, estimate, conf.low, conf.high, p.value) |&gt;
-    knitr::kable(digits = 3)</code></pre>
+    knitr::kable(digits = 3, caption = &quot;MLR Full Model)&quot;)</code></pre>
 <table>
+<caption>MLR Full Model)</caption>
 <thead>
 <tr class="header">
 <th align="left">term</th>
@@ -517,17 +557,10 @@ summary(mlr_fit) |&gt;
 p2 = ggplot(mlr_fit, aes(sample = .resid)) + stat_qq() + stat_qq_line() + labs(title = &quot;Normal Q-Q Plot of Residuals&quot;)
 
 p1 + p2</code></pre>
-<p><img src="regression_analysis_files/figure-html/unnamed-chunk-5-1.png" width="90%" /></p>
-<p>The residuals appear randomly scattered around zero without a clear
-pattern, suggesting that the linearity and constant variance assumptions
-are reasonably satisfied.</p>
-<p>Most points fall close to the reference line, indicating that the
-residuals are approximately normally distributed. A few deviations at
-the tails are expected with small samples (n = 50), but overall the
-normality assumption is acceptable.</p>
-<p>After fitting the MLR model, we apply stepwise selection to
-efficiently identify the most informative predictors while keeping the
-key electricity variables in the model.</p>
+<p><img src="regression_analysis_files/figure-html/unnamed-chunk-6-1.png" width="90%" /></p>
+<p>The linearity and constant variance assumptions are reasonably
+satisfied. Overall, the normality assumption is acceptable.</p>
+<p>stepwise selection</p>
 <pre class="r"><code>lower_model = lm(mean_glth ~ EI_proportion + PO_proportion, data = regression_data)
 
 step_model = step(mlr_fit, scope = list(lower = formula(lower_model), upper = formula(mlr_fit)),
@@ -599,7 +632,11 @@ summary(step_model) |&gt;
 </tr>
 </tbody>
 </table>
-<p>The final model based on MLR results in:</p>
+<p>The final model based on MLR results in: Prevalence of fair/poor
+general health = -5.635 + 0.556 Prevalence of poor mental health - 0.115
+Prevalence of insufficient sleep+ 0.226 Prevalence of no leisure-time
+physical activity + 0.744 Prevalence of diabetes + 13.841 Energy
+Insecurity proportion - 2.102 Power Outage proportion.</p>
 </div>
 <div id="elastic-net" class="section level3">
 <h3>ELASTIC NET</h3>
@@ -617,7 +654,7 @@ cross-validation by default, repeatedly splitting the data into ten
 parts, training the model on nine parts, and validating it on the
 remaining part to select the <span
 class="math inline">\(\lambda\)</span> that minimizes the
-cross-validated error</p>
+cross-validated error.</p>
 <pre class="r"><code>y &lt;- regression_data$mean_glth
 
 x &lt;- regression_data |&gt;
@@ -657,31 +694,6 @@ rmse_en</code></pre>
 </div>
 <div id="cross-validation" class="section level3">
 <h3>Cross Validation</h3>
-<p>fit a base-level model that only depend on electronical
-variables.</p>
-<pre class="r"><code>mlr_basic = lm(mean_glth ~ EI_proportion * PO_proportion, data = regression_data)
-
-summary(mlr_basic)</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = mean_glth ~ EI_proportion * PO_proportion, data = regression_data)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -3.6103 -0.8722 -0.1769  1.0968  3.9032 
-## 
-## Coefficients:
-##                             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)                    4.135      2.242   1.844   0.0716 .  
-## EI_proportion                 43.079      8.934   4.822 1.59e-05 ***
-## PO_proportion                 -6.480     10.400  -0.623   0.5363    
-## EI_proportion:PO_proportion   25.192     37.882   0.665   0.5094    
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.642 on 46 degrees of freedom
-## Multiple R-squared:  0.7534, Adjusted R-squared:  0.7373 
-## F-statistic: 46.85 on 3 and 46 DF,  p-value: 4.981e-14</code></pre>
 <pre class="r"><code>cv_df =
   crossv_mc(regression_data, n = 100) |&gt;
   mutate(
