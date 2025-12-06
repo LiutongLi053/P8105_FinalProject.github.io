@@ -20,8 +20,9 @@ Mental health represents a critical component of public health, significantly in
 
 Our analysis integrates two nationally representative datasets that provide complementary perspectives on our research question:
 
-1.  **Residential Energy Consumption Survey (RECS)**: Captures household-level energy insecurity indicators
-2.  **CDC PLACES Data**: Provides community-level mental and physical health prevalence estimates
+1.  [Residential Energy Consumption Survey(RECS)](<https://www.eia.gov/consumption/residential/data/2020/#household>): Captures household-level energy insecurity indicators
+
+2.  [CDC PLACES Data](<https://data.cdc.gov/500-Cities-Places/PLACES-Census-Tract-Data-GIS-Friendly-Format-2022-/shc3-fzig/about_data>): Provides community-level mental and physical health prevalence estimates
 
 The temporal alignment (2020 reference period) and comprehensive geographic coverage of both datasets enable robust state-level analysis of the association between energy insecurity and mental distress.
 
