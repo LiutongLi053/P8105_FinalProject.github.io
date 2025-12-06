@@ -1,5 +1,4 @@
 ---
-title: "Final Report"
 output: 
   html_document:
     code_folding: hide
@@ -605,6 +604,7 @@ This pattern suggests that energy insecurity is intertwined with broader structu
 
 **Takeaway:**
 States with higher EI also experience systematically worse health profiles across behavioral, chronic disease, and general health indicators.
+
 ## 4. Regression Analysis
 
 ### 4.1 Model Preparation

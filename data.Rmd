@@ -1,5 +1,4 @@
 ---
-title: "Data Description"
 output: 
   html_document:
     toc: true

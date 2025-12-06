@@ -56,7 +56,7 @@ We will integrate the 2020 CDC PLACES and EIA RECS datasets by aggregating both 
 
 ```{r, echo=FALSE}
 timeline <- tibble(
-  Date = c("November 9", "November 19", "November 24", "November 29", "December 5", "December 10"),
+  Date = c("November 9", "November 19", "November 24", "November 29", "December 1", "December 6"),
   Task = c(
     "Project review preparation",
     "Data cleaning and EDA",

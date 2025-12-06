@@ -606,7 +606,7 @@ htmltools::div(
 <div style="display: flex; align-items: center;">
 <div class="card-icon"><i class="fa-solid fa-chart-line"></i></div>
 <div class="card-title-wrapper">
-<div class="card-title">Model</div>
+<div class="card-title">Regression</div>
 <div class="card-subtitle">Statistical Modeling</div>
 </div>
 </div>
